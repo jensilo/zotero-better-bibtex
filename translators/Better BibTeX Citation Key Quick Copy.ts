@@ -2,6 +2,7 @@
 declare const Zotero: any
 
 import { simplifyForExport } from '../gen/items/simplify'
+import { escapeHtml } from '../content/text'
 
 import { Eta } from 'eta'
 const eta = new Eta({ autoEscape: false })
@@ -12,14 +13,6 @@ function select_by_key(item) {
 }
 function select_by_citekey(item) {
   return `zotero://select/items/@${encodeURIComponent(item.citationKey)}`
-}
-
-function escapeHtml(unsafe: string): string {
-  return unsafe
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
 }
 
 function authorOf(item): string {

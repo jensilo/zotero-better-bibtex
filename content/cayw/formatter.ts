@@ -4,9 +4,34 @@ import { Translators } from '../translators'
 import { getItemsAsync } from '../get-items-async'
 import { Preference } from '../prefs'
 import { fromPairs } from '../object'
+import { escapeHtml } from '../text'
 import { scannableCite } from '../../gen/ScannableCite'
 
 import * as unicode_table from 'unicode2latex/tables/unicode.json'
+
+function authorOf(item): string {
+  try {
+    const creators = item.getCreatorsJSON() || []
+    const creator = creators[0] || {}
+    let name: string = creator.name || creator.lastName || 'no author'
+    if (creators.length > 1) name += ' et al.'
+    return name
+  }
+  catch (err) {
+    return ''
+  }
+}
+
+function yearOf(item): string {
+  const itemDate = item.getField('date')
+  if (!itemDate) return 'no date'
+
+  let date = Zotero.BetterBibTeX.parseDate(itemDate)
+  if (date.type === 'interval') date = date.from
+
+  if (date.type === 'verbatim' || !date.year) return item.date as string
+  return `${date.year}`
+}
 
 const unicode2latex = (fromPairs(
   Object
@@ -198,6 +223,15 @@ export const Formatter = new class { // eslint-disable-line @typescript-eslint/n
 
   public async jekyll(citations, _options) {
     return citations.map(cit => `{% cite ${cit.citekey} %}`).join('')
+  }
+
+  public async jupyter(citations, _options) {
+    let formatted = ''
+    for (const cit of citations) {
+      const item = await getItemsAsync(cit.id)
+      if (item) formatted += `<cite data-cite="${escapeHtml(cit.citekey)}">(${escapeHtml(authorOf(item))}, ${escapeHtml(yearOf(item))})</cite>`
+    }
+    return formatted
   }
 
   public async pandoc(citations, options) {
